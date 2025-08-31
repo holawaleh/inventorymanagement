@@ -94,3 +94,10 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 
 # Default primary key field type
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+# Login/Logout Redirects
+LOGIN_REDIRECT_URL = '/dashboard/'
+LOGOUT_REDIRECT_URL = '/login/'
+
+# Optional: If you want to use Django messages
+MESSAGE_STORAGE = 'django.contrib.messages.storage.session.SessionStorage'

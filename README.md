@@ -24,3 +24,13 @@ This project is part of a step-by-step learning journey to master backend develo
 - [ ] CRUD views for inventory items
 - [ ] API URL routing
 - [ ] Test endpoints with HTTP
+- [x] Secured settings with `python-decouple`
+- [x] Externalized `SECRET_KEY`, `DEBUG`, `ALLOWED_HOSTS`, DB credentials
+- [x] Used lambda to parse comma-separated `ALLOWED_HOSTS`
+- [x] Configured static files for dev and production
+- [x] Set proper login/logout redirects
+- [x] Learned how environment variables make apps deployable
+- [x] Fixed logout 405 error by replacing `<a>` tag with secure `POST` form
+- [x] Learned why `LogoutView` requires `POST` requests
+- [x] Added `{% csrf_token %}` for security
+- [x] Improved UX with proper logout flow

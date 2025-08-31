@@ -11,7 +11,10 @@
   <div class="container">
     <header>
       <h1>📦 Inventory Management</h1>
-      <p>Welcome, {{ user.username }} | <a href="/logout/" style="color: white">Logout</a></p>
+      <form method="post" action="/logout/" style="display: inline;">
+        {% csrf_token %}
+        <button type="submit">Logout</button>
+      </form>
     </header>
 
     <main>
