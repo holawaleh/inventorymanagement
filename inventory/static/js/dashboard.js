@@ -1,6 +1,45 @@
+// =======================
+// Helper Functions
+// =======================
+
+/**
+ * Get CSRF token from browser cookies
+ * Required for POST, PUT, DELETE requests
+ */
+function getCookie(name) {
+  let cookieValue = null;
+  if (document.cookie && document.cookie !== '') {
+    const cookies = document.cookie.split(';');
+    for (let i = 0; i < cookies.length; i++) {
+      const cookie = cookies[i].trim();
+      if (cookie.substring(0, name.length + 1) === (name + '=')) {
+        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+        break;
+      }
+    }
+  }
+  return cookieValue;
+}
+
+
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+// =======================
+// DOM Ready: Load Data on Page Load
+// =======================
+
 document.addEventListener('DOMContentLoaded', function () {
   fetchItems();
+  fetchLowStock();
 });
+
+// =======================
+// Fetch & Display Inventory Items
+// =======================
 
 function fetchItems() {
   fetch('/api/items/')
@@ -16,7 +55,6 @@ function fetchItems() {
       const list = document.getElementById('item-list');
       list.innerHTML = '';
 
-      // ✅ Only loop over data.results
       const results = data.results || [];
 
       if (results.length === 0) {
@@ -43,6 +81,8 @@ function fetchItems() {
     });
 }
 
+<script src="{% static 'js/dashboard.js' %}"></script>
+
 function addItem(event) {
   event.preventDefault();
 
@@ -52,10 +92,16 @@ function addItem(event) {
   const data = {
     name: formData.get('name'),
     description: formData.get('description'),
-    quantity: parseInt(formData.get('quantity')),
-    price: parseFloat(formData.get('price')),
+    quantity: parseInt(formData.get('quantity')) || 0,
+    price: parseFloat(formData.get('price')) || 0,
     category: formData.get('category')
   };
+
+  // Validate required fields
+  if (!data.name || data.quantity < 0 || data.price < 0) {
+    alert('Please fill in all required fields with valid values.');
+    return;
+  }
 
   fetch('/api/items/', {
     method: 'POST',
@@ -65,29 +111,30 @@ function addItem(event) {
     },
     body: JSON.stringify(data)
   })
-  .then(response => response.json())
-  .then(() => {
+  .then(response => {
+    if (!response.ok) {
+      if (response.status === 403) {
+        window.location.href = '/login/';
+        throw new Error('Unauthorized');
+      }
+      return response.json().then(err => { throw err; });
+    }
+    return response.json();
+  })
+  .then(item => {
     form.reset();
     fetchItems();
+    fetchLowStock();
   })
-  .catch(err => console.error('Error:', err));
+  .catch(err => {
+    console.error('Error adding item:', err);
+    alert('Failed to add item. Check console for details.');
+  });
 }
 
-// Helper to get CSRF token (required for POST)
-function getCookie(name) {
-  let cookieValue = null;
-  if (document.cookie && document.cookie !== '') {
-    const cookies = document.cookie.split(';');
-    for (let i = 0; i < cookies.length; i++) {
-      const cookie = cookies[i].trim();
-      if (cookie.substring(0, name.length + 1) === (name + '=')) {
-        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-        break;
-      }
-    }
-  }
-  return cookieValue;
-}
+// =======================
+// Delete Item
+// =======================
 
 function deleteItem(id) {
   if (!confirm('Delete this item?')) return;
@@ -98,10 +145,19 @@ function deleteItem(id) {
       'X-CSRFToken': getCookie('csrftoken')
     }
   })
-  .then(() => fetchItems())
-  .catch(err => console.error('Error:', err));
-
+  .then(() => {
+    fetchItems();
+    fetchLowStock();
+  })
+  .catch(err => {
+    console.error('Error deleting item:', err);
+    alert('Failed to delete item.');
+  });
 }
+
+// =======================
+// Fetch Low Stock Items
+// =======================
 
 function fetchLowStock() {
   fetch('/api/items/low_stock/?threshold=5')
@@ -137,9 +193,3 @@ function fetchLowStock() {
       document.getElementById('low-stock-list').innerHTML = '<li><em>Error loading low stock</em></li>';
     });
 }
-
-// Call it when page loads
-document.addEventListener('DOMContentLoaded', function () {
-  fetchItems();
-  fetchLowStock();  // ← Add this
-});

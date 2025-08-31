@@ -19,3 +19,27 @@ class InventoryItem(models.Model):
         ordering = ['-date_added']  # Newest first
         verbose_name = "Inventory Item"
         verbose_name_plural = "Inventory Items"
+
+class InventoryChange(models.Model):
+    CHANGE_TYPES = [
+        ('added', 'Item Added'),
+        ('updated', 'Quantity Updated'),
+        ('restocked', 'Restocked'),
+        ('sold', 'Item Sold'),
+    ]
+
+    item = models.ForeignKey(InventoryItem, on_delete=models.CASCADE, related_name='changes')
+    change_type = models.CharField(max_length=20, choices=CHANGE_TYPES)
+    old_quantity = models.PositiveIntegerField()
+    new_quantity = models.PositiveIntegerField()
+    change_reason = models.CharField(max_length=100, blank=True, null=True)
+    changed_by = models.ForeignKey(User, on_delete=models.CASCADE)
+    changed_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.get_change_type_display()} - {self.item.name} ({self.old_quantity} → {self.new_quantity})"
+
+    class Meta:
+        ordering = ['-changed_at']
+        verbose_name = "Inventory Change"
+        verbose_name_plural = "Inventory Changes"
