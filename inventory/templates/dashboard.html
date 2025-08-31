@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="UTF-8">
+  <title>Inventory Dashboard</title>
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+
+<body>
+  <div class="container">
+    <header>
+      <h1>📦 Inventory Management</h1>
+      <p>Welcome, {{ user.username }} | <a href="/logout/" style="color: white">Logout</a></p>
+    </header>
+
+    <main>
+      <h2>Add New Item</h2>
+      <form onsubmit="addItem(event)">
+        <input type="text" name="name" placeholder="Item Name" required>
+        <input type="text" name="description" placeholder="Description (optional)">
+        <input type="number" name="quantity" placeholder="Quantity" required min="0">
+        <input type="number" name="price" placeholder="Price" step="0.01" required min="0">
+        <input type="text" name="category" placeholder="Category (e.g. Electronics)">
+        <button type="submit">Add Item</button>
+      </form>
+
+      <h2>Your Inventory</h2>
+      <ul id="item-list">
+        <!-- Filled by JavaScript -->
+      </ul>
+    </main>
+  </div>
+
+  <script src="/static/js/dashboard.js"></script>
+</body>
+
+</html>
