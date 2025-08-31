@@ -81,7 +81,7 @@ function fetchItems() {
     });
 }
 
-<script src="{% static 'js/dashboard.js' %}"></script>
+
 
 function addItem(event) {
   event.preventDefault();
