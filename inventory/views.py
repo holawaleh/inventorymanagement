@@ -1,77 +1,72 @@
 from django.shortcuts import render, redirect
-
-# For user authentication forms
 from django.contrib.auth.forms import UserCreationForm
-
-# For protecting views (only logged-in users can access)
 from django.contrib.auth.decorators import login_required
 
-
-# For API functionality
-from rest_framework import viewsets, permissions
+from rest_framework import viewsets, permissions, filters
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from django_filters.rest_framework import DjangoFilterBackend
 
-# Our models and serializers
 from .models import InventoryItem
 from .serializers import InventoryItemSerializer
 
-# HTML VIEWS (For Browser Pages)
 
-def signup(request):
-    # If the user is submitting the form (POST request)
-    if request.method == 'POST':
-        form = UserCreationForm(request.POST)
-        # Is the data valid? (e.g. password strong enough, username not taken)
-        if form.is_valid():
-            form.save()  # Save the new user to the database
-            return redirect('login')  # Go to login page after signup
-    else:
-        # If just visiting (GET request), show empty form
-        form = UserCreationForm()
-
-    # Render the signup page with the form
-    return render(request, 'registration/signup.html', {'form': form})
-
-
-@login_required
-def dashboard(request):
-    """
-    Show the main dashboard page.
-    Only accessible if logged in (thanks to @login_required).
-    """
-    return render(request, "dashboard.html")
-
-
-# API VIEWS (For JSON Data)
-
+# Custom permission: only the owner can edit/delete their own items
 class IsOwner(permissions.BasePermission):
-   def has_object_permission(self, request, view, obj):
-        # obj = the inventory item being accessed
-        # request.user = the currently logged-in user
+    def has_object_permission(self, request, view, obj):
         return obj.user == request.user
 
 
+# API ViewSet
 class InventoryViewSet(viewsets.ModelViewSet):
-    
     serializer_class = InventoryItemSerializer
     permission_classes = [permissions.IsAuthenticated, IsOwner]
 
+    # Filtering, search, ordering
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_fields = ['category', 'quantity', 'price']
+    search_fields = ['name', 'description']
+    ordering_fields = ['name', 'quantity', 'price', 'date_added']
+    ordering = ['-date_added']
+
     def get_queryset(self):
-        
+        # Only show items owned by the logged-in user
         return InventoryItem.objects.filter(user=self.request.user)
 
     def perform_create(self, serializer):
-        
+        # Assign the logged-in user as owner
         serializer.save(user=self.request.user)
 
     @action(detail=False, methods=['get'])
     def low_stock(self, request):
-        
-        low_stock = self.get_queryset().filter(quantity__lt=5)
+        # Dynamic threshold from query params, default < 5
+        threshold = request.query_params.get('threshold', 5)
+        try:
+            threshold = int(threshold)
+        except ValueError:
+            threshold = 5
+
+        low_stock = self.get_queryset().filter(quantity__lt=threshold)
         page = self.paginate_queryset(low_stock)
         if page is not None:
             serializer = self.get_serializer(page, many=True)
             return self.get_paginated_response(serializer.data)
         serializer = self.get_serializer(low_stock, many=True)
         return Response(serializer.data)
+
+
+# HTML views
+def signup(request):
+    if request.method == 'POST':
+        form = UserCreationForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect('login')
+    else:
+        form = UserCreationForm()
+    return render(request, 'registration/signup.html', {'form': form})
+
+
+@login_required
+def dashboard(request):
+    return render(request, "dashboard.html")

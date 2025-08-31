@@ -22,6 +22,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "rest_framework",
     "inventory",
+    'django_filters',  # For filtering support
 ]
 
 MIDDLEWARE = [
@@ -101,3 +102,9 @@ LOGOUT_REDIRECT_URL = '/login/'
 
 # Optional: If you want to use Django messages
 MESSAGE_STORAGE = 'django.contrib.messages.storage.session.SessionStorage'
+
+# REST Framework Settings
+REST_FRAMEWORK = {
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 10  # Show 10 items per page
+}

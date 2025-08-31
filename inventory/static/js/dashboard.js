@@ -6,6 +6,7 @@ function fetchItems() {
   fetch('/api/items/')
     .then(response => {
       if (response.status === 403) {
+        alert('Session expired. Redirecting to login.');
         window.location.href = '/login/';
         return;
       }
@@ -15,21 +16,31 @@ function fetchItems() {
       const list = document.getElementById('item-list');
       list.innerHTML = '';
 
-      data.forEach(item => {
-        const li = document.createElement('li');
-        li.className = 'item';
-        li.innerHTML = `
-          <div>
-            <strong>${item.name}</strong>: ${item.description || 'No description'}
-            <br>
-            <small>Qty: ${item.quantity} | ₦${item.price} | ${item.category || 'Uncategorized'}</small>
-          </div>
-          <button onclick="deleteItem(${item.id})">Delete</button>
-        `;
-        list.appendChild(li);
-      });
+      // ✅ Only loop over data.results
+      const results = data.results || [];
+
+      if (results.length === 0) {
+        list.innerHTML = '<li><em>No items yet. Add one!</em></li>';
+      } else {
+        results.forEach(item => {
+          const li = document.createElement('li');
+          li.className = 'item';
+          li.innerHTML = `
+            <div>
+              <strong>${escapeHtml(item.name)}</strong>: ${escapeHtml(item.description || 'No description')}
+              <br>
+              <small>Qty: ${item.quantity} | ₦${item.price} | ${escapeHtml(item.category || 'Uncategorized')}</small>
+            </div>
+            <button onclick="deleteItem(${item.id})">Delete</button>
+          `;
+          list.appendChild(li);
+        });
+      }
     })
-    .catch(err => console.error('Error:', err));
+    .catch(err => {
+      console.error('Error fetching items:', err);
+      document.getElementById('item-list').innerHTML = '<li><em>Error loading items</em></li>';
+    });
 }
 
 function addItem(event) {
@@ -89,4 +100,46 @@ function deleteItem(id) {
   })
   .then(() => fetchItems())
   .catch(err => console.error('Error:', err));
+
 }
+
+function fetchLowStock() {
+  fetch('/api/items/low_stock/?threshold=5')
+    .then(response => {
+      if (response.status === 403) {
+        window.location.href = '/login/';
+        return;
+      }
+      return response.json();
+    })
+    .then(data => {
+      const list = document.getElementById('low-stock-list');
+      list.innerHTML = '';
+
+      const results = data.results || [];
+
+      if (results.length === 0) {
+        list.innerHTML = '<li><em>No low stock items</em></li>';
+      } else {
+        results.forEach(item => {
+          const li = document.createElement('li');
+          li.className = 'item';
+          li.style.color = 'red';
+          li.innerHTML = `
+            <strong>${escapeHtml(item.name)}</strong>: only <strong>${item.quantity}</strong> left!
+          `;
+          list.appendChild(li);
+        });
+      }
+    })
+    .catch(err => {
+      console.error('Error fetching low stock:', err);
+      document.getElementById('low-stock-list').innerHTML = '<li><em>Error loading low stock</em></li>';
+    });
+}
+
+// Call it when page loads
+document.addEventListener('DOMContentLoaded', function () {
+  fetchItems();
+  fetchLowStock();  // ← Add this
+});
