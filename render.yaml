@@ -1,0 +1,32 @@
+services:
+  - type: web
+    name: inventory-api
+    runtime: python
+    env: production
+    plan: free
+    region: oregon
+    envVars:
+      - key: DEBUG
+        value: false
+      - key: SECRET_KEY
+        generateValue: true
+      - key: ALLOWED_HOSTS
+        value: "*.onrender.com"
+      - key: DB_NAME
+        value: inventdb
+      - key: DB_USER
+        value: inventuser
+      - key: DB_HOST
+        fromDatabase: inventory-db
+        property: connectionString
+      - key: DB_PORT
+        value: 5432
+    buildCommand: |
+      python -m pip install -r requirements.txt
+      python manage.py makemigrations
+      python manage.py migrate
+      python manage.py collectstatic --noinput
+    startCommand: gunicorn inventoryapi.wsgi
+    database:
+      name: inventory-db
+      plan: free

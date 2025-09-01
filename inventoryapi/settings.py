@@ -8,7 +8,7 @@ SECRET_KEY = config("SECRET_KEY", default="django-insecure-aqwe+#fqmetp^c^msvi+s
 
 DEBUG = config("DEBUG", default=True, cast=bool)
 
-ALLOWED_HOSTS = config("ALLOWED_HOSTS", default="", cast=lambda v: [s.strip() for s in v.split(",") if s]) 
+ALLOWED_HOSTS = config("ALLOWED_HOSTS", default="127.0.0.1,localhost", cast=lambda v: [s.strip() for s in v.split(",") if s])
 
 
 
@@ -22,7 +22,8 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "rest_framework",
     "inventory",
-    'django_filters',  # For filtering support
+    'django_filters', 
+      # For filtering support
 ]
 
 MIDDLEWARE = [

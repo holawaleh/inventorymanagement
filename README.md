@@ -53,7 +53,6 @@ This app allows users to manage inventory items securely with authentication, re
     Change Logging: Audit trail of all inventory changes (who, what, when)
     Responsive Dashboard: Clean UI with real-time JavaScript updates
 
-
 ✅ Technical Highlights
 
     Built with Django + DRF
@@ -65,7 +64,6 @@ This app allows users to manage inventory items securely with authentication, re
     Pagination, filtering, and sorting in API
     Static files configured for dev and production
     GitHub version control with detailed commit history
-
 
 🚀 Live Demo
 Sign Up
@@ -83,7 +81,6 @@ Track every quantity change
 
     🔗 Watch the 5-minute demo:
     https://www.loom.com/watch/your-video-id-here
-
 
 🛠️ Tech Stack
 Backend
