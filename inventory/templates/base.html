@@ -1,0 +1,37 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <title>{% block title %}Inventory Management{% endblock %}</title>
+  <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+
+<body>
+  <header>
+    <h1>📦 Inventory Management</h1>
+    <nav>
+      <ul>
+        <li><a href="{% url 'dashboard' %}">🏠 Dashboard</a></li>
+        <li><a href="{% url 'item_list' %}">📋 Items</a></li>
+        <li><a href="{% url 'item_create' %}">➕ Add Item</a></li>
+        <li><a href="{% url 'logout' %}">🚪 Logout</a></li>
+      </ul>
+    </nav>
+    <hr>
+  </header>
+
+  <main>
+    {% block content %}
+    <!-- Page-specific content goes here -->
+    {% endblock %}
+  </main>
+
+  <footer>
+    <hr>
+    <p>&copy; {{ now|date:"Y" }} Inventory Management</p>
+  </footer>
+</body>
+
+</html>

@@ -9,6 +9,17 @@ from django_filters.rest_framework import DjangoFilterBackend
 
 from .models import InventoryItem
 from .serializers import InventoryItemSerializer
+from .forms import InventoryItemForm
+from django.shortcuts import get_object_or_404
+
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import render
+from .models import InventoryItem
+
+@login_required
+def dashboard(request):
+    items = InventoryItem.objects.filter(user=request.user)
+    return render(request, "dashboard.html", {"items": items})
 
 
 # Custom permission: only the owner can edit/delete their own items
@@ -68,5 +79,40 @@ def signup(request):
 
 
 @login_required
-def dashboard(request):
-    return render(request, "dashboard.html")
+def item_list(request):
+    items = InventoryItem.objects.filter(user=request.user)
+    return render(request, "items/item_list.html", {"items": items})
+
+@login_required
+def item_create(request):
+    if request.method == "POST":
+        form = InventoryItemForm(request.POST)
+        if form.is_valid():
+            item = form.save(commit=False)
+            item.user = request.user
+            item.save()
+            return redirect("item_list")
+    else:
+        form = InventoryItemForm()
+    return render(request, "items/item_form.html", {"form": form})
+
+@login_required
+def item_update(request, pk):
+    item = get_object_or_404(InventoryItem, pk=pk, user=request.user)
+    if request.method == "POST":
+        form = InventoryItemForm(request.POST, instance=item)
+        if form.is_valid():
+            form.save()
+            return redirect("item_list")
+    else:
+        form = InventoryItemForm(instance=item)
+    return render(request, "items/item_form.html", {"form": form})
+
+@login_required
+def item_delete(request, pk):
+    item = get_object_or_404(InventoryItem, pk=pk, user=request.user)
+    if request.method == "POST":
+        item.delete()
+        return redirect("item_list")
+    return render(request, "items/item_confirm_delete.html", {"item": item})
+

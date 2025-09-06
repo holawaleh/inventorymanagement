@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>{% if form.instance.pk %}Edit Item{% else %}Add New Item{% endif %}</h2>
+
+<form method="post">
+  {% csrf_token %}
+  {{ form.as_p }}
+  <button type="submit">{% if form.instance.pk %}Update{% else %}Add Item{% endif %}</button>
+</form>
+
+<a href="{% url 'item_list' %}">⬅ Back to list</a>
+{% endblock %}

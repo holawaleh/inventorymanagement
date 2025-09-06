@@ -1,46 +1,29 @@
+{% extends "base.html" %}
 {% load static %}
-<!DOCTYPE html>
-<html>
 
-<head>
-  <meta charset="UTF-8">
-  <title>Inventory Dashboard</title>
-  <link rel="stylesheet" href="{% static 'css/style.css' %}">
-</head>
+{% block title %}Dashboard{% endblock %}
 
-<body>
-  <div class="container">
-    <header>
-      <h1>📦 Inventory Management</h1>
-      <form method="post" action="/logout/" style="display: inline;">
-        {% csrf_token %}
-        <button type="submit">Logout</button>
-      </form>
-    </header>
+{% block content %}
+<div class="container">
+  <h2>Welcome, {{ user.username }}</h2>
 
-    <main>
-      <h2>Add New Item</h2>
-      <form onsubmit="addItem(event)">
-        <input type="text" name="name" placeholder="Item Name" required>
-        <input type="text" name="description" placeholder="Description (optional)">
-        <input type="number" name="quantity" placeholder="Quantity" required min="0">
-        <input type="number" name="price" placeholder="Price" step="0.01" required min="0">
-        <input type="text" name="category" placeholder="Category (e.g. Electronics)">
-        <button type="submit">Add Item</button>
-      </form>
+  <h3>Add New Item</h3>
+  <form id="add-item-form">
+    {% csrf_token %}
+    <input type="text" id="name" placeholder="Item Name" required>
+    <input type="text" id="description" placeholder="Description (optional)">
+    <input type="number" id="quantity" placeholder="Quantity" required min="0">
+    <input type="number" id="price" placeholder="Price" step="0.01" required min="0">
+    <input type="text" id="category" placeholder="Category (e.g. Electronics)">
+    <button type="submit">Add Item</button>
+  </form>
 
-      <h2>Your Inventory</h2>
-      <ul id="item-list">
-        <!-- Filled by JavaScript -->
-      </ul>
-      <h2>Low Stock Items</h2>
-      <ul id="low-stock-list">
-        <!-- Filled by JS -->
-      </ul>
-    </main>
-  </div>
+  <h3>Your Inventory</h3>
+  <ul id="item-list"></ul>
 
-  <script src="/static/js/dashboard.js"></script>
-</body>
+  <h3>Low Stock Items</h3>
+  <ul id="low-stock-list"></ul>
+</div>
 
-</html>
+<script src="{% static 'js/dashboard.js' %}"></script>
+{% endblock %}

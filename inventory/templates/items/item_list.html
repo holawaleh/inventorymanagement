@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>📦 Inventory Management</h1>
+
+<p><a href="{% url 'logout' %}">Logout</a></p>
+<p><a href="{% url 'item_create' %}" class="btn">➕ Add New Item</a></p>
+
+<hr>
+
+<h2>Your Inventory</h2>
+<table border="1" cellpadding="8">
+  <tr>
+    <th>Name</th>
+    <th>Description</th>
+    <th>Quantity</th>
+    <th>Price</th>
+    <th>Category</th>
+    <th>Actions</th>
+  </tr>
+  {% for item in items %}
+  <tr>
+    <td>{{ item.name }}</td>
+    <td>{{ item.description }}</td>
+    <td>{{ item.quantity }}</td>
+    <td>₦{{ item.price }}</td>
+    <td>{{ item.category }}</td>
+    <td>
+      <a href="{% url 'item_update' item.pk %}">✏️ Edit</a> |
+      <a href="{% url 'item_delete' item.pk %}">🗑️ Delete</a>
+    </td>
+  </tr>
+  {% empty %}
+  <tr>
+    <td colspan="6">No items found.</td>
+  </tr>
+  {% endfor %}
+</table>
+
+<hr>
+
+<h2>Low Stock Items</h2>
+<ul>
+  {% for item in items %}
+  {% if item.quantity < 5 %} <li>{{ item.name }} — only {{ item.quantity }} left!</li>
+    {% endif %}
+    {% empty %}
+    <li>No low stock items 🎉</li>
+    {% endfor %}
+</ul>
+{% endblock %}
