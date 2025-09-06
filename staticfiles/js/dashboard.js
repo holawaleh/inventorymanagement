@@ -1,18 +1,11 @@
-// =======================
-// Helper Functions
-// =======================
-
-/**
- * Get CSRF token from browser cookies
- * Required for POST, PUT, DELETE requests
- */
+// Helper to get CSRF token from cookies
 function getCookie(name) {
   let cookieValue = null;
-  if (document.cookie && document.cookie !== '') {
-    const cookies = document.cookie.split(';');
+  if (document.cookie && document.cookie !== "") {
+    const cookies = document.cookie.split(";");
     for (let i = 0; i < cookies.length; i++) {
       const cookie = cookies[i].trim();
-      if (cookie.substring(0, name.length + 1) === (name + '=')) {
+      if (cookie.substring(0, name.length + 1) === name + "=") {
         cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
         break;
       }
@@ -20,176 +13,121 @@ function getCookie(name) {
   }
   return cookieValue;
 }
+const csrftoken = getCookie("csrftoken");
 
-
-function escapeHtml(text) {
-  const div = document.createElement('div');
-  div.textContent = text;
-  return div.innerHTML;
-}
-
-// =======================
-// DOM Ready: Load Data on Page Load
-// =======================
-
-document.addEventListener('DOMContentLoaded', function () {
-  fetchItems();
-  fetchLowStock();
-});
-
-// =======================
-// Fetch & Display Inventory Items
-// =======================
-
-function fetchItems() {
-  fetch('/api/items/')
-    .then(response => {
-      if (response.status === 403) {
-        alert('Session expired. Redirecting to login.');
-        window.location.href = '/login/';
-        return;
-      }
-      return response.json();
-    })
-    .then(data => {
-      const list = document.getElementById('item-list');
-      list.innerHTML = '';
-
-      const results = data.results || [];
-
-      if (results.length === 0) {
-        list.innerHTML = '<li><em>No items yet. Add one!</em></li>';
-      } else {
-        results.forEach(item => {
-          const li = document.createElement('li');
-          li.className = 'item';
-          li.innerHTML = `
-            <div>
-              <strong>${escapeHtml(item.name)}</strong>: ${escapeHtml(item.description || 'No description')}
-              <br>
-              <small>Qty: ${item.quantity} | ₦${item.price} | ${escapeHtml(item.category || 'Uncategorized')}</small>
-            </div>
-            <button onclick="deleteItem(${item.id})">Delete</button>
-          `;
-          list.appendChild(li);
-        });
-      }
-    })
-    .catch(err => {
-      console.error('Error fetching items:', err);
-      document.getElementById('item-list').innerHTML = '<li><em>Error loading items</em></li>';
-    });
-}
-
-
-
-function addItem(event) {
-  event.preventDefault();
-
-  const form = event.target;
-  const formData = new FormData(form);
+// Handle form submission (Create item)
+document.getElementById("add-item-form").addEventListener("submit", async function (e) {
+  e.preventDefault();
 
   const data = {
-    name: formData.get('name'),
-    description: formData.get('description'),
-    quantity: parseInt(formData.get('quantity')) || 0,
-    price: parseFloat(formData.get('price')) || 0,
-    category: formData.get('category')
+    name: document.getElementById("name").value,
+    description: document.getElementById("description").value,
+    quantity: document.getElementById("quantity").value,
+    price: document.getElementById("price").value,
+    category: document.getElementById("category").value,
   };
 
-  // Validate required fields
-  if (!data.name || data.quantity < 0 || data.price < 0) {
-    alert('Please fill in all required fields with valid values.');
-    return;
-  }
-
-  fetch('/api/items/', {
-    method: 'POST',
+  const response = await fetch("/api/items/", {
+    method: "POST",
     headers: {
-      'Content-Type': 'application/json',
-      'X-CSRFToken': getCookie('csrftoken')
+      "Content-Type": "application/json",
+      "X-CSRFToken": csrftoken,
     },
-    body: JSON.stringify(data)
-  })
-  .then(response => {
-    if (!response.ok) {
-      if (response.status === 403) {
-        window.location.href = '/login/';
-        throw new Error('Unauthorized');
-      }
-      return response.json().then(err => { throw err; });
-    }
-    return response.json();
-  })
-  .then(item => {
-    form.reset();
-    fetchItems();
-    fetchLowStock();
-  })
-  .catch(err => {
-    console.error('Error adding item:', err);
-    alert('Failed to add item. Check console for details.');
+    body: JSON.stringify(data),
   });
-}
 
-// =======================
-// Delete Item
-// =======================
+  if (response.ok) {
+    document.getElementById("add-item-form").reset();
+    loadItems(); // refresh list
+  } else {
+    const error = await response.json();
+    alert("Error: " + JSON.stringify(error));
+  }
+});
 
-function deleteItem(id) {
-  if (!confirm('Delete this item?')) return;
+// Delete item
+async function deleteItem(id) {
+  if (!confirm("Are you sure you want to delete this item?")) return;
 
-  fetch(`/api/items/${id}/`, {
-    method: 'DELETE',
+  const response = await fetch(`/api/items/${id}/`, {
+    method: "DELETE",
     headers: {
-      'X-CSRFToken': getCookie('csrftoken')
-    }
-  })
-  .then(() => {
-    fetchItems();
-    fetchLowStock();
-  })
-  .catch(err => {
-    console.error('Error deleting item:', err);
-    alert('Failed to delete item.');
+      "X-CSRFToken": csrftoken,
+    },
   });
+
+  if (response.ok) {
+    loadItems();
+  } else {
+    alert("Failed to delete item");
+  }
 }
 
-// =======================
-// Fetch Low Stock Items
-// =======================
+// Edit item
+async function editItem(item) {
+  const newName = prompt("Update item name:", item.name);
+  if (newName === null) return;
 
-function fetchLowStock() {
-  fetch('/api/items/low_stock/?threshold=5')
-    .then(response => {
-      if (response.status === 403) {
-        window.location.href = '/login/';
-        return;
-      }
-      return response.json();
-    })
-    .then(data => {
-      const list = document.getElementById('low-stock-list');
-      list.innerHTML = '';
+  const newQty = prompt("Update quantity:", item.quantity);
+  if (newQty === null) return;
 
-      const results = data.results || [];
+  const newPrice = prompt("Update price:", item.price);
+  if (newPrice === null) return;
 
-      if (results.length === 0) {
-        list.innerHTML = '<li><em>No low stock items</em></li>';
-      } else {
-        results.forEach(item => {
-          const li = document.createElement('li');
-          li.className = 'item';
-          li.style.color = 'red';
-          li.innerHTML = `
-            <strong>${escapeHtml(item.name)}</strong>: only <strong>${item.quantity}</strong> left!
-          `;
-          list.appendChild(li);
-        });
-      }
-    })
-    .catch(err => {
-      console.error('Error fetching low stock:', err);
-      document.getElementById('low-stock-list').innerHTML = '<li><em>Error loading low stock</em></li>';
+  const response = await fetch(`/api/items/${item.id}/`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      "X-CSRFToken": csrftoken,
+    },
+    body: JSON.stringify({
+      name: newName,
+      quantity: newQty,
+      price: newPrice,
+    }),
+  });
+
+  if (response.ok) {
+    loadItems();
+  } else {
+    alert("Failed to update item");
+  }
+}
+
+// Load items (main + low stock)
+async function loadItems() {
+  // All items
+  const response = await fetch("/api/items/");
+  const data = await response.json();
+  const items = data.results || data;
+  const list = document.getElementById("item-list");
+  list.innerHTML = "";
+  items.forEach((item) => {
+    const li = document.createElement("li");
+    li.innerHTML = `
+      <span>${item.name}: ${item.description} | Qty: ${item.quantity} | ₦${item.price} | ${item.category}</span>
+      <button onclick='editItem(${JSON.stringify(item)})'>✏️ Edit</button>
+      <button onclick="deleteItem(${item.id})">🗑 Delete</button>
+    `;
+    list.appendChild(li);
+  });
+
+  // Low stock items
+  const lowStockRes = await fetch("/api/items/low_stock/?threshold=5");
+  const lowStockData = await lowStockRes.json();
+  const lowStock = lowStockData.results || lowStockData;
+  const lowList = document.getElementById("low-stock-list");
+  lowList.innerHTML = "";
+  if (lowStock.length === 0) {
+    lowList.innerHTML = "<li>No low stock items 🎉</li>";
+  } else {
+    lowStock.forEach((item) => {
+      const li = document.createElement("li");
+      li.textContent = `${item.name} — only ${item.quantity} left!`;
+      lowList.appendChild(li);
     });
+  }
 }
+
+// Load items when page loads
+window.onload = loadItems;
